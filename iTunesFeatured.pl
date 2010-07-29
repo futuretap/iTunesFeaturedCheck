@@ -144,16 +144,21 @@ my %categories = (
 
 $appId = shift;
 $categoryName = shift;
+$mode = shift;
+$mode = lc$mode;
+if($mode eq ""){
+    $mode = "iphone";
+}
 
-($appId =~ m/^\d+$/) || die "Usage: itFeatured.pl <numerical app ID> <category (Medical, Utilities etc.)>\n\n";
+($appId =~ m/^\d+$/) || die "Usage: itFeatured.pl <numerical app ID> <category (Medical, Utilities etc.)> [<store (iPad,iPhone)>]\n\n";
 $date = `date "+%d.%m.%Y"`;
 chomp $date;
 
 foreach $country (sort(keys %iso2store)) {
 	my $matchesRoot = "";
 	my $matchesCategory = "";
-	$matchesRoot = printFeaturingForAppIdCountryAndCategory($appID, $country, "");
-	$matchesCategory = printFeaturingForAppIdCountryAndCategory($appID, $country, $categoryName);
+	$matchesRoot = printFeaturingForAppIdCountryAndCategory($appID, $country, "",$mode);
+	$matchesCategory = printFeaturingForAppIdCountryAndCategory($appID, $country, $categoryName,$mode);
 	
 	if ("$matchesRoot$matchesCategory" ne "") {
 		if ($matchesRoot ne "") {
@@ -170,7 +175,7 @@ foreach $country (sort(keys %iso2store)) {
 exit 0;
 
 sub printFeaturingForAppIdCountryAndCategory {
-	my ($appID, $country, $categoryName) = @_;
+	my ($appID, $country, $categoryName, $mode) = @_;
 
 	my $storefront = $iso2store{$country};
 	my $categoryId = $categories{$categoryName};
@@ -185,7 +190,7 @@ sub printFeaturingForAppIdCountryAndCategory {
 	}	
 	$xml = `curl -s -H "X-Apple-Store-Front: $storefront-1,5"  "http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
 	if ($xml =~ m!<string>http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping\?id=(\d+)\&amp;mt=8</string>!) {
-		$homepageURL = "http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?id=$1&mt=8&pillIdentifier=iphone";
+		$homepageURL = "http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?id=$1&mt=8&pillIdentifier=$mode";
 	} else {
 		return "\nhomepageURL not found for $country $categoryName\n";
 	}
