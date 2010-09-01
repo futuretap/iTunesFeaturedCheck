@@ -189,7 +189,7 @@ sub printFeaturingForAppIdCountryAndCategory {
 		##print "## case 2: ";
 	}	
 	$xml = `curl -s -H "X-Apple-Store-Front: $storefront-1,5"  "http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
-	if ($xml =~ m!<string>http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping\?id=(\d+)\&amp;mt=8</string>!) {
+	if ($xml =~ m!<string>http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping\?[^<]*id=(\d+)\</string>!) {
 		$homepageURL = "http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?id=$1&mt=8&pillIdentifier=$mode";
 	} else {
 		return "\nhomepageURL not found for $country $categoryName\n";
