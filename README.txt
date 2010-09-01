@@ -6,7 +6,9 @@ See http://www.futuretap.com/blog/scraping-app-store-featured-entries/ for a lon
 
 Usage:
 
-# itFeatured.pl <numerical app ID> <category (Medical, Utilities etc.)>
+# itFeatured.pl <numerical app ID> <category (Medical, Utilities etc.)> [iPhone | iPad]
+
+If "iPhone" or "iPad" is not specified, it defaults to iPhone.
 
 Example:
 iTunesFeatured.pl 284940039 Navigation
