@@ -188,9 +188,9 @@ sub printFeaturingForAppIdCountryAndCategory {
 	} else {
 		##print "## case 2: ";
 	}	
-	$xml = `curl -s -H "X-Apple-Store-Front: $storefront-1,5"  "http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
-	if ($xml =~ m!<string>http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping\?[^<]*id=(\d+)\</string>!) {
-		$homepageURL = "http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?id=$1&mt=8&pillIdentifier=$mode";
+	$xml = `curl -s -H "X-Apple-Store-Front: $storefront-1,5"  "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
+	if ($xml =~ m!<string>http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping\?[^<]*id=(\d+)\</string>!) {
+		$homepageURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?id=$1&mt=8&pillIdentifier=$mode";
 	} else {
 		return "\nhomepageURL not found for $country $categoryName\n";
 	}
@@ -203,23 +203,23 @@ sub printFeaturingForAppIdCountryAndCategory {
 		my $matches = "";
 		$xml =~ tr/\n//d; # delete all linebreaks
 		
-		if ($xml =~ m!http://ax.itunes.apple.com/../app/.+/id$appId!) {
+		if ($xml =~ m!http://itunes.apple.com/../app/.+/id$appId!) {
 			$matches .= "Home page ";
 		}
 
-		if ($xml =~ m!<h\d>(New and Noteworthy|New &amp; Noteworthy|NEU UND BEACHTENSWERT|NUEVO Y DIGNO DE DESTACAR|NUOVE E DEGNE DI NOTA|Nuovi e da segnalare|ニューリリースと注目作品|注目の新作|Nieuw en opmerkelijk|Nouveautés).+?(http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)">!i) {
+		if ($xml =~ m!<h\d>(New and Noteworthy|New &amp; Noteworthy|NEU UND BEACHTENSWERT|NUEVO Y DIGNO DE DESTACAR|NUOVE E DEGNE DI NOTA|Nuovi e da segnalare|ニューリリースと注目作品|注目の新作|Nieuw en opmerkelijk|Nouveautés).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)">!i) {
 			##print "## found new\n";
 			if (fetchAndGrep($storefront, $2, $appId)) {
 				$matches .= "NEW AND NOTEWORTHY ";
 			}
 		} 
-		if ($xml =~ m!<h\d>(What's Hot|TOPAKTUELL|Lo último|Più richieste|Nieuw en opmerkelijk|Actualités).+?(http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
+		if ($xml =~ m!<h\d>(What's Hot|TOPAKTUELL|Lo último|Più richieste|Nieuw en opmerkelijk|Actualités).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
 			##print "## found hot\n";
 			if (fetchAndGrep($storefront, $2, $appId)) {
 				$matches .= "WHAT'S HOT ";
 			}
 		} 
-		if ($xml =~ m!<h\d>(STAFF FAVORITES|STAFF FAVOURITES|TIPPS DER REDAKTION|NUESTRAS SUGERENCIAS|CONSIGLIATI DALLO STAFF|スタッフのおすすめ|FAVORIET BIJ ONZE MEDEWERKERS|Recommandées).+?(http://ax.itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
+		if ($xml =~ m!<h\d>(STAFF FAVORITES|STAFF FAVOURITES|TIPPS DER REDAKTION|NUESTRAS SUGERENCIAS|CONSIGLIATI DALLO STAFF|スタッフのおすすめ|FAVORIET BIJ ONZE MEDEWERKERS|Recommandées).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
 			##print "## found staff\n";
 			if (fetchAndGrep($storefront, $2, $appId)) {
 				$matches .= "STAFF FAVORITES ";
