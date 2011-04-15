@@ -24,7 +24,7 @@
 	"cr" => 143494,
 	"cz" => 143489,
 	"dk" => 143458,
- 	"de" => 143443,
+	"de" => 143443,
 	"sv" => 143506,
 	"es" => 143454,
 	"fi" => 143447,
@@ -83,6 +83,25 @@ my %genres = (
 	"Entertainment" => 6016,
 	"Finance" => 6015,
 	"Games" => 6014,
+	"Games/Action"		=> 7001,
+	"Games/Adventure"	=> 7002,
+	"Games/Arcade"		=> 7003,
+	"Games/Board"		=> 7004,
+	"Games/Card"		=> 7005,
+	"Games/Casino"		=> 7006,
+	"Games/Dice"		=> 7007,
+	"Games/Educational"	=> 7008,
+	"Games/Family"		=> 7009,
+	"Games/Kids"		=> 7010,
+	"Games/Music"		=> 7011,
+	"Games/Puzzle"		=> 7012,
+	"Games/Racing"		=> 7013,
+	"Games/Role Playing"=> 7014,
+	"Games/Simulation"	=> 7015,
+	"Games/Sports"		=> 7016,
+	"Games/Strategy"	=> 7017,
+	"Games/Trivia"		=> 7018,
+	"Games/Word"		=> 7019,
 	"Health &amp; Fitness" => 6013,
 	"Lifestyle" => 6012,
 	"Medical" => 6020,
@@ -98,49 +117,6 @@ my %genres = (
 	"Utilities" => 6002,
 	"Weather" => 6001
 );
-my %categories = (
-	"Top Overall"		=> 25204,
-	"Top Overall Revenue" => 25210,
-	"Books"				=> 25470,
-	"Business"			=> 25148,
-	"Education"			=> 25156,
-	"Entertainment"		=> 25164,
-	"Finance"			=> 25172,
-	"Healthcare & Fitness"		=> 25188,
-	"Lifestyle"			=> 25196,
-	"Medical"			=> 26321,
-	"Music"				=> 25212,
-	"Navigation"		=> 25226,
-	"News"				=> 25228,
-	"Photography"		=> 25236,
-	"Productivity"		=> 25244,
-	"Reference"			=> 25252,
-	"Social Networking"	=> 25260,
-	"Sports"			=> 25268,
-	"Travel"			=> 25276,
-	"Utilities"			=> 25284,
-	"Weather"			=> 25292,
-	"All Games"			=> 25180,
-	"Games/Action"		=> 26341,
-	"Games/Adventure"	=> 26351,
-	"Games/Arcade"		=> 26361,
-	"Games/Board"		=> 26371,
-	"Games/Card"		=> 26381,
-	"Games/Casino"		=> 26341,
-	"Games/Dice"		=> 26341,
-	"Games/Educational"	=> 26411,
-	"Games/Family"		=> 26421,
-	"Games/Kids"		=> 26431,
-	"Games/Music"		=> 26441,
-	"Games/Puzzle"		=> 26451,
-	"Games/Racing"		=> 26461,
-	"Games/Role Playing"=> 26471,
-	"Games/Simulation"	=> 26481,
-	"Games/Sports"		=> 26491,
-	"Games/Strategy"	=> 26501,
-	"Games/Trivia"		=> 26511,
-	"Games/Word"		=> 26521,
-);
 
 $appId = shift;
 $categoryName = shift;
@@ -150,11 +126,21 @@ if($mode eq ""){
     $mode = "iphone";
 }
 
-($appId =~ m/^\d+$/) || die "Usage: itFeatured.pl <numerical app ID> <category (Medical, Utilities etc.)> [<store (iPad,iPhone)>]\n\n";
+#$debug = 1;
+
+$headers =' -b "groupingPillToken=' . $mode . '" -H "Accept-Encoding: gzip, deflate" --compressed -A "iTunes/10.2.1 (Macintosh; Intel Mac OS X 10.6.7) AppleWebKit/533.21.1" ';
+
+
+($appId =~ m/^\d+$/) || die "Usage: itFeatured.pl <numerical app ID> <category (Medical, Utilities, Games, Games/Strategy etc.)> [<store (iPad,iPhone)>]\n\n";
 $date = `date "+%d.%m.%Y"`;
 chomp $date;
 
 foreach $country (sort(keys %iso2store)) {
+	my $newStorefront = $iso2store{$country};
+	my $switchUrl = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/switchToStoreFront?storeFrontId=$newStorefront&ign-impt=clickRef%3DSwitch%2520Stores-DE";
+	DEBUG ($switchUrl);
+	`curl -s -H "X-Apple-Store-Front: $newStorefront-1,12" $headers "$switchUrl"`;
+
 	my $matchesRoot = "";
 	my $matchesCategory = "";
 	$matchesRoot = printFeaturingForAppIdCountryAndCategory($appID, $country, "",$mode);
@@ -178,48 +164,51 @@ sub printFeaturingForAppIdCountryAndCategory {
 	my ($appID, $country, $categoryName, $mode) = @_;
 
 	my $storefront = $iso2store{$country};
-	my $categoryId = $categories{$categoryName};
 	my $genreId = $genres{$categoryName};
 	
-	my $xml, $homepageURL;
+	my $xml = "";
+	my $homepageURL = "";
 	if ($categoryName eq "") {
 		##print "## case 1: ";
 		$genreId=36;
 	} else {
 		##print "## case 2: ";
-	}	
-	$xml = `curl -s -H "X-Apple-Store-Front: $storefront-1,5"  "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
-	if ($xml =~ m!<string>http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping\?[^<]*id=(\d+)\</string>!) {
-		$homepageURL = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGrouping?id=$1&mt=8&pillIdentifier=$mode";
+	}
+	DEBUG ("fetching $storefront-1,12 http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8");
+	$xml = `curl -s $headers -H "X-Apple-Store-Front: $storefront-1,12"  "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
+	if ($xml =~ m!<key>kind</key><string>Goto</string>\n.+<key>url</key><string>(.+)</string>!) {
+		$homepageURL = urldecode($1) . "&pillIdentifier=$mode";
 	} else {
+		!$debug or die "\nhomepageURL not found for $country $categoryName\n $xml";
 		return "\nhomepageURL not found for $country $categoryName\n";
 	}
 	
-	##print "checking $country $homepageURL\n";
+	#print "checking $country $homepageURL\n";
 	
 		
 	if($homepageURL) {
-		$xml = `curl -s -H "X-Apple-Store-Front: $storefront,5"  "$homepageURL"`;
+		DEBUG ("fetching $storefront-12 $homepageURL");
+		$xml = `curl -s $headers -H "X-Apple-Store-Front: $storefront,12"  "$homepageURL"`;
 		my $matches = "";
 		$xml =~ tr/\n//d; # delete all linebreaks
-		
+
 		if ($xml =~ m!http://itunes.apple.com/../app/.+/id$appId!) {
 			$matches .= "Home page ";
 		}
 
-		if ($xml =~ m!<h\d>(New and Noteworthy|New &amp; Noteworthy|NEU UND BEACHTENSWERT|NUEVO Y DIGNO DE DESTACAR|NUOVE E DEGNE DI NOTA|Nuovi e da segnalare|ニューリリースと注目作品|注目の新作|Nieuw en opmerkelijk|Nouveautés).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)">!i) {
+		if ($xml =~ m!<h\d>(New and Noteworthy|New &amp; Noteworthy|NEU UND BEACHTENSWERT|Nuevo y notable|NUEVO Y DESTACADO|NUEVO Y DIGNO DE DESTACAR|NUOVE E DEGNE DI NOTA|Nuovi e da segnalare|ニューリリースと注目作品|注目の新作|Nieuw en opmerkelijk|Nouveautés).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)">!i) {
 			##print "## found new\n";
 			if (fetchAndGrep($storefront, $2, $appId)) {
 				$matches .= "NEW AND NOTEWORTHY ";
 			}
 		} 
-		if ($xml =~ m!<h\d>(What's Hot|TOPAKTUELL|Lo último|Più richieste|Nieuw en opmerkelijk|Actualités).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
+		if ($xml =~ m!<h\d>(What's Hot|TOPAKTUELL|Lo más Hot|Lo último|Più richieste|Nieuw en opmerkelijk|Actualités).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
 			##print "## found hot\n";
 			if (fetchAndGrep($storefront, $2, $appId)) {
 				$matches .= "WHAT'S HOT ";
 			}
 		} 
-		if ($xml =~ m!<h\d>(STAFF FAVORITES|STAFF FAVOURITES|TIPPS DER REDAKTION|NUESTRAS SUGERENCIAS|CONSIGLIATI DALLO STAFF|スタッフのおすすめ|FAVORIET BIJ ONZE MEDEWERKERS|Recommandées).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
+		if ($xml =~ m!<h\d>(STAFF FAVORITES|STAFF FAVOURITES|TIPPS DER REDAKTION|Nuestras Favoritas|NUESTRAS SUGERENCIAS|CONSIGLIATI DALLO STAFF|スタッフのおすすめ|FAVORIET BIJ ONZE MEDEWERKERS|Recommandées).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
 			##print "## found staff\n";
 			if (fetchAndGrep($storefront, $2, $appId)) {
 				$matches .= "STAFF FAVORITES ";
@@ -234,8 +223,27 @@ sub printFeaturingForAppIdCountryAndCategory {
 sub fetchAndGrep {
 	my($storefront, $url, $appid) = @_;
 	##print "## fetch and grep for storefront:$storefront, url:$url, appid:$appid\n";
-	my $xml = `curl -s -H "X-Apple-Store-Front: $storefront,5" '$url'`;
+	my $fetchxml;
+	DEBUG ("fetching $storefront,12 $url");
+	$fetchxml = `curl -s $headers -H "X-Apple-Store-Front: $storefront,12" '$url'`;
 	#$xml .= `curl -s -H "X-Apple-Store-Front: $storefront,5" '$url&batchNumber=1'`;
 	#$xml =~ tr/\n//d; # delete all linebreaks
-	return ($xml =~ m!id$appid!);
+	return ($fetchxml =~ m!id$appid!);
+}
+
+sub DEBUG {
+	my $out = shift;
+	
+	if ($debug) {
+		print $out . "\n";
+	}
+}
+
+sub urldecode {
+	my ($str) = shift;
+	$str =~ tr/+/ /;
+	$str =~ s/%([a-fA-F0-9]{2,2})/chr(hex($1))/eg;
+	$str =~ s/<!–(.|\n)*–>//g;
+	$str =~ s/&amp;/&/g;
+	return $str;
 }
