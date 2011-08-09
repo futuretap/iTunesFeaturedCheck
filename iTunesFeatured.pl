@@ -2,7 +2,7 @@
 
 # Created by Ortwin Gentz on 27.04.09.
 #
-# Copyright 2010 FutureTap. All rights reserved.
+# Copyright 2010-2011 FutureTap GmbH. All rights reserved.
 # http://www.futuretap.com/blog/scraping-app-store-featured-entries/
 #
 # This work is licensed under a Creative Commons Attribution-Share Alike 3.0 Unported License
@@ -183,38 +183,35 @@ sub printFeaturingForAppIdCountryAndCategory {
 		return "\nhomepageURL not found for $country $categoryName\n";
 	}
 	
-	#print "checking $country $homepageURL\n";
+	DEBUG("checking $country $homepageURL");
 	
 		
 	if($homepageURL) {
 		DEBUG ("fetching $storefront-12 $homepageURL");
 		$xml = `curl -s $headers -H "X-Apple-Store-Front: $storefront,12"  "$homepageURL"`;
-		my $matches = "";
+		my @matches = ();
 		$xml =~ tr/\n//d; # delete all linebreaks
 
-		if ($xml =~ m!http://itunes.apple.com/../app/.+/id$appId!) {
-			$matches .= "Home page ";
+		if ($xml =~ m!<div metrics-loc="Stage_item_"><a href="http://itunes.apple.com/[^"]+$appId!i) {
+			push(@matches, "TOP STAGE");
 		}
 
-		if ($xml =~ m!<h\d>(New and Noteworthy|New &amp; Noteworthy|NEU UND BEACHTENSWERT|Nuevo y notable|NUEVO Y DESTACADO|NUEVO Y DIGNO DE DESTACAR|NUOVE E DEGNE DI NOTA|Nuovi e da segnalare|ニューリリースと注目作品|注目の新作|Nieuw en opmerkelijk|Nouveautés).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)">!i) {
-			##print "## found new\n";
-			if (fetchAndGrep($storefront, $2, $appId)) {
-				$matches .= "NEW AND NOTEWORTHY ";
-			}
-		} 
-		if ($xml =~ m!<h\d>(What's Hot|TOPAKTUELL|Lo más Hot|Lo último|Più richieste|Nieuw en opmerkelijk|Actualités).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
-			##print "## found hot\n";
-			if (fetchAndGrep($storefront, $2, $appId)) {
-				$matches .= "WHAT'S HOT ";
-			}
-		} 
-		if ($xml =~ m!<h\d>(STAFF FAVORITES|STAFF FAVOURITES|TIPPS DER REDAKTION|Nuestras Favoritas|NUESTRAS SUGERENCIAS|CONSIGLIATI DALLO STAFF|スタッフのおすすめ|FAVORIET BIJ ONZE MEDEWERKERS|Recommandées).+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^"]+)!i) {
-			##print "## found staff\n";
-			if (fetchAndGrep($storefront, $2, $appId)) {
-				$matches .= "STAFF FAVORITES ";
-			}
-		} 
-		return $matches;
+		if ($xml =~ m!http://itunes.apple.com/../app/.+/id$appId!) {
+			push(@matches, "Home page");
+		}
+		
+		while ($xml =~ m!<div class="title">.+?<h2>(.+?)</h2>!gm) {
+			$featuringCat = $1;
+
+			if ($xml =~ m!<h\d>$featuringCat.+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)"!i) {
+				DEBUG ("checking: $featuringCat $1");
+				if (fetchAndGrep($storefront, $1, $appId)) {
+					push(@matches, $featuringCat);
+				}
+			} 
+		}
+
+		return join(", ", @matches);
 	} else {
 		return "parse error for 'curl -s -H \"X-Apple-Store-Front: $storefront\"  \"$homepageURL\"'\n";
 	}
@@ -222,7 +219,6 @@ sub printFeaturingForAppIdCountryAndCategory {
 
 sub fetchAndGrep {
 	my($storefront, $url, $appid) = @_;
-	##print "## fetch and grep for storefront:$storefront, url:$url, appid:$appid\n";
 	my $fetchxml;
 	DEBUG ("fetching $storefront,12 $url");
 	$fetchxml = `curl -s $headers -H "X-Apple-Store-Front: $storefront,12" '$url'`;
