@@ -40,3 +40,8 @@ http://www.futuretap.com/blog/scraping-app-store-featured-entries/
 
 This work is licensed under a Creative Commons Attribution-Share Alike 3.0 Unported License
 http://creativecommons.org/licenses/by-sa/3.0/
+
+=====
+
+Changes: 2012-07-07 @monkeydom
+Greatly improved speed by having a queue of 10 downloaders instead of just one at a time. If you run into issues, reduce the $max_concurrent_requests value of 10 to something smaller.
