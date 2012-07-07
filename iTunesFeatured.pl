@@ -11,6 +11,7 @@
 # If you use this script, I'd be glad to know. Just shoot me a tweet @futuretap
 # or a mail at info@futuretap.com.
 
+use Thread qw(async);
 
 %iso2store = (
 	"ar" => 143505,
@@ -135,28 +136,58 @@ $headers =' -b "groupingPillToken=' . $mode . '" -H "Accept-Encoding: gzip, defl
 $date = `date "+%d.%m.%Y"`;
 chomp $date;
 
-foreach $country (sort(keys %iso2store)) {
-	my $newStorefront = $iso2store{$country};
-	my $switchUrl = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/switchToStoreFront?storeFrontId=$newStorefront&ign-impt=clickRef%3DSwitch%2520Stores-DE";
-	DEBUG ($switchUrl);
-	`curl -s -H "X-Apple-Store-Front: $newStorefront-1,12" $headers "$switchUrl"`;
+my @threads_array = ();
+my @results_array = ();
 
-	my $matchesRoot = "";
-	my $matchesCategory = "";
-	$matchesRoot = printFeaturingForAppIdCountryAndCategory($appID, $country, "",$mode);
-	$matchesCategory = printFeaturingForAppIdCountryAndCategory($appID, $country, $categoryName,$mode);
+my $max_concurrent_requests = 10;
+
+foreach $country (sort(keys %iso2store)) {
+	my $thread = async {
+		my $newStorefront = $iso2store{$country};
+		my $switchUrl = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/switchToStoreFront?storeFrontId=$newStorefront&ign-impt=clickRef%3DSwitch%2520Stores-DE";
+		DEBUG ($switchUrl);
+		`curl -s -H "X-Apple-Store-Front: $newStorefront-1,12" $headers "$switchUrl"`;
 	
-	if ("$matchesRoot$matchesCategory" ne "") {
-		if ($matchesRoot ne "") {
-			$matchesRoot = "App Store: $matchesRoot";
+		my $matchesRoot = "";
+		my $matchesCategory = "";
+		$matchesRoot = printFeaturingForAppIdCountryAndCategory($appID, $country, "",$mode);
+		$matchesCategory = printFeaturingForAppIdCountryAndCategory($appID, $country, $categoryName,$mode);
+		
+		if ("$matchesRoot$matchesCategory" ne "") {
+			if ($matchesRoot ne "") {
+				$matchesRoot = "App Store: $matchesRoot";
+			}
+			$matchesRoot .= "\t";
+			if ($matchesCategory ne "") {
+				$matchesCategory = "$categoryName: $matchesCategory";
+			}
+			return ( "$date\t" . uc($country) . "\t" . $matchesRoot . $matchesCategory . "\n");
 		}
-		$matchesRoot .= "\t";
-		if ($matchesCategory ne "") {
-			$matchesCategory = "$categoryName: $matchesCategory";
+	};
+	push(@threads_array, $thread);
+	if (scalar(@threads_array) > $max_concurrent_requests) {
+#		print "waiting on results of one of " . scalar(@threads_array) ." threads\n";
+	  my $shifted_thread = shift(@threads_array);
+#	  print "waiting on " . $shifted_thread ."\n";
+		my $result = $shifted_thread->join();
+		if ($result) {
+		  print $result;
+#			@results_array->push($result);
 		}
-		print "$date\t" . uc($country) . "\t" . $matchesRoot . $matchesCategory . "\n";
 	}
 }
+
+foreach $thread (@threads_array) {
+	if ($thread) {
+		my $result = $thread->join();
+		if ($result) {
+			print $result;
+#			push(@results_array, $result);
+		}
+	}
+}
+
+#print join("", @results_array);
 
 exit 0;
 
