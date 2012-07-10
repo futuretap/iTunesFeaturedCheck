@@ -12,6 +12,7 @@
 # or a mail at info@futuretap.com.
 
 use Thread qw(async);
+use HTML::Entities;
 
 %iso2store = (
 	"ar" => 143505,
@@ -231,13 +232,13 @@ sub printFeaturingForAppIdCountryAndCategory {
 			push(@matches, "Home page");
 		}
 		
-		while ($xml =~ m!<div class="title">.+?<h2>(^@.+?)</h2>!gm) {
+		while ($xml =~ m!<div class="title">.+?<h2>([^@]+?)</h2>!gm) {
 			$featuringCat = $1;
 
 			if ($xml =~ m!<h\d>$featuringCat.+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)"!i) {
 				DEBUG ("checking: $featuringCat $1");
 				if (fetchAndGrep($storefront, $1, $appId)) {
-					push(@matches, $featuringCat);
+					push(@matches, decode_entities($featuringCat));
 				}
 			} 
 		}
