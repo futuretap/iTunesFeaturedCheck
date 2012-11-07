@@ -145,9 +145,9 @@ my $max_concurrent_requests = 10;
 foreach $country (sort(keys %iso2store)) {
 	my $thread = async {
 		my $newStorefront = $iso2store{$country};
-		my $switchUrl = "http://itunes.apple.com/WebObjects/MZStore.woa/wa/switchToStoreFront?storeFrontId=$newStorefront&ign-impt=clickRef%3DSwitch%2520Stores-DE";
+		my $switchUrl = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/switchToStoreFront?storeFrontId=$newStorefront&ign-impt=clickRef%3DSwitch%2520Stores-DE";
 		DEBUG ($switchUrl);
-		`curl -s -H "X-Apple-Store-Front: $newStorefront-1,12" $headers "$switchUrl"`;
+		`curl -s -H "X-Apple-Store-Front: $newStorefront-12" $headers "$switchUrl"`;
 	
 		my $matchesRoot = "";
 		my $matchesCategory = "";
@@ -206,8 +206,8 @@ sub printFeaturingForAppIdCountryAndCategory {
 	} else {
 		##print "## case 2: ";
 	}
-	DEBUG ("fetching $storefront-1,12 http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8");
-	$xml = `curl -s $headers -H "X-Apple-Store-Front: $storefront-1,12"  "http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
+	DEBUG ("fetching $newStorefront-12 https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8");
+	$xml = `curl -s $headers -H "X-Apple-Store-Front: $newStorefront-12"  "https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewGenre?id=$genreId&mt=8"`;
 	if ($xml =~ m!<key>kind</key><string>Goto</string>\n.+<key>url</key><string>(.+)</string>!) {
 		$homepageURL = urldecode($1) . "&pillIdentifier=$mode";
 	} else {
@@ -219,24 +219,24 @@ sub printFeaturingForAppIdCountryAndCategory {
 	
 		
 	if($homepageURL) {
-		DEBUG ("fetching $storefront-12 $homepageURL");
+		DEBUG ("fetching $newStorefront-12 $homepageURL");
 		$xml = `curl -s $headers -H "X-Apple-Store-Front: $storefront,12"  "$homepageURL"`;
 		my @matches = ();
 		$xml =~ tr/\n//d; # delete all linebreaks
 
-		if ($xml =~ m!<div metrics-loc="Stage_item_"><a href="http://itunes.apple.com/[^"]+$appId!i) {
+		if ($xml =~ m!<div metrics-loc="Stage_item_"><a href="https://itunes.apple.com/[^"]+$appId!i) {
 			push(@matches, "TOP STAGE");
 		}
 
-		if ($xml =~ m!http://itunes.apple.com/../app/.+/id$appId!) {
+		if ($xml =~ m!https://itunes.apple.com/../app/.+/id$appId!) {
 			push(@matches, "Home page");
 		}
 		
 		while ($xml =~ m!<div class="title">.+?<h2>([^@]+?)</h2>!gm) {
 			$featuringCat = $1;
 
-			if ($xml =~ m!<h\d>$featuringCat.+?(http://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)"!i) {
-				DEBUG ("checking: $featuringCat $1");
+			if ($xml =~ m!<h\d>$featuringCat.+?(https://itunes.apple.com/WebObjects/MZStore.woa/wa/viewRoom[^">]+)"!i) {
+				DEBUG ("checking: $country $featuringCat $1");
 				if (fetchAndGrep($storefront, $1, $appId)) {
 					push(@matches, decode_entities($featuringCat));
 				}

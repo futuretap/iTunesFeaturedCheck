@@ -47,6 +47,7 @@ License
 =======
 
 Copyright 2010-2012 FutureTap. All rights reserved.
+
 http://www.futuretap.com/blog/scraping-app-store-featured-entries/
 http://www.futuretap.com/blog/revised-app-store-featured-entry-scraper/
 
