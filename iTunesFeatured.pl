@@ -148,12 +148,12 @@ foreach $country (sort(keys %iso2store)) {
 		my $switchUrl = "https://itunes.apple.com/WebObjects/MZStore.woa/wa/switchToStoreFront?storeFrontId=$newStorefront&ign-impt=clickRef%3DSwitch%2520Stores-DE";
 		DEBUG ($switchUrl);
 		`curl -s -H "X-Apple-Store-Front: $newStorefront-12" $headers "$switchUrl"`;
-	
+
 		my $matchesRoot = "";
 		my $matchesCategory = "";
 		$matchesRoot = printFeaturingForAppIdCountryAndCategory($appID, $country, "",$mode);
 		$matchesCategory = printFeaturingForAppIdCountryAndCategory($appID, $country, $categoryName,$mode);
-		
+
 		if ("$matchesRoot$matchesCategory" ne "") {
 			if ($matchesRoot ne "") {
 				$matchesRoot = "App Store: $matchesRoot";
@@ -197,7 +197,7 @@ sub printFeaturingForAppIdCountryAndCategory {
 
 	my $storefront = $iso2store{$country};
 	my $genreId = $genres{$categoryName};
-	
+
 	my $xml = "";
 	my $homepageURL = "";
 	if ($categoryName eq "") {
@@ -214,10 +214,10 @@ sub printFeaturingForAppIdCountryAndCategory {
 		!$debug or die "\nhomepageURL not found for $country $categoryName\n $xml";
 		return "\nhomepageURL not found for $country $categoryName\n";
 	}
-	
+
 	DEBUG("checking $country $homepageURL");
-	
-		
+
+
 	if($homepageURL) {
 		DEBUG ("fetching $newStorefront-12 $homepageURL");
 		$xml = `curl -s $headers -H "X-Apple-Store-Front: $storefront,12"  "$homepageURL"`;
@@ -231,7 +231,7 @@ sub printFeaturingForAppIdCountryAndCategory {
 		if ($xml =~ m!https://itunes.apple.com/../app/.+/id$appId!) {
 			push(@matches, "Home page");
 		}
-		
+
 		while ($xml =~ m!<div class="title">.+?<h2>([^@]+?)</h2>!gm) {
 			$featuringCat = $1;
 
@@ -240,7 +240,7 @@ sub printFeaturingForAppIdCountryAndCategory {
 				if (fetchAndGrep($storefront, $1, $appId)) {
 					push(@matches, decode_entities($featuringCat));
 				}
-			} 
+			}
 		}
 
 		return join(", ", @matches);
@@ -261,7 +261,7 @@ sub fetchAndGrep {
 
 sub DEBUG {
 	my $out = shift;
-	
+
 	if ($debug) {
 		print $out . "\n";
 	}
